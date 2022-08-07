@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 
 
 # Assumptions
@@ -21,11 +22,11 @@ class Level(dict):
 def add_nodes(current_node, nodes, index):
     node = nodes[index]
 
-    if index == nodes.__len__() - 1:
+    if index == len(nodes) - 1:
         current_node.children.append(node)
         return
 
-    if current_node.children.__len__() < 1:
+    if len(current_node.children) < 1:
         current_node.children.append(nodes[index + 1])
     else:
         for child in current_node.children:
@@ -48,11 +49,11 @@ def process_row(col_count, root, row):
 
 # read each line of csv
 def read_csv(filepath):
+
     try:
         open(filepath)
-    except FileNotFoundError:
-        print("file not found")
-        pass
+    except OSError:
+        print("cannot open")
     with open(filepath) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
@@ -82,9 +83,11 @@ def read_csv(filepath):
 def main():
     print(" the process is going to start")
     filepath = input("Please type the entire filepath with the filename : ")
-    if ".csv" in filepath and not None:
+
+    if filepath is not None and filepath.endswith(".csv"):
         read_csv(filepath)
-    print("Either the there was no input given or file format is not correct")
+    else:
+        raise FileNotFoundError
 
 
 if __name__ == "__main__":
