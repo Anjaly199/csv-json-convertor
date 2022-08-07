@@ -9,78 +9,83 @@ import json
 
 # a node in the tree , represent each level
 class Level(dict):
-  def __init__(self, label, id, link, children=None):
-    super().__init__()
-    self.__dict__ = self
-    self.label = label
-    self.id = id
-    self.link = link
-    self.children = list(children) if children is not None else []
-
-  def addNode(self, obj):
-    self.children.append(obj)
-
-  def toJSON(self):
-    return json.dumps(self, default=lambda o: o.__dict__,
-                      sort_keys=True, indent=4)
+    def __init__(self, label, level_id, link, children=None):
+        super().__init__()
+        self.__dict__ = self
+        self.label = label
+        self.level_id = level_id
+        self.link = link
+        self.children = list(children) if children is not None else []
 
 
-def getNewNode(row, col):
-  new_node = Level(row[col], row[col + 1], row[col + 2])
+def add_nodes(current_node, nodes, index):
+    node = nodes[index]
+
+    if index == nodes.__len__() - 1:
+        current_node.children.append(node)
+        return
+
+    if current_node.children.__len__() < 1:
+        current_node.children.append(nodes[index + 1])
+    else:
+        for child in current_node.children:
+            if child.level_id == nodes[index].level_id:
+                add_nodes(child, nodes, index + 1)
 
 
-def addNodes(current_node, nodes, index):
-  node = nodes[index]
+def process_row(col_count, root, row):
+    col = 1
+    nodes = []
+    while col < col_count:  # fetch all nodes in the row
+        if len(row[col]) == 0:
+            break
+        nodes.append(Level(row[col], row[col + 1], row[col + 2]))
+        col += 3
 
-  if index == nodes.__len__() - 1:
-    current_node.children.append(node)
-    return
+    if len(nodes) > 0:
+        add_nodes(root, nodes, 1)  # insert into the tree
 
-  if current_node.children.__len__() < 1:
-    current_node.children.append(nodes[index + 1])
-  else:
-    for child in current_node.children:
-      if child.id == nodes[index].id:
-        addNodes(child, nodes, index + 1)
-
-
-def processRow(col_count, root, row):
-  col = 1
-  nodes = []
-  while (col < col_count): # fetch all nodes in the row
-    if len(row[col]) == 0:
-      break
-    nodes.append(Level(row[col], row[col + 1], row[col + 2]))
-    col += 3;
-
-  if nodes.__len__() > 0:
-    addNodes(root, nodes, 1)  # insert into the tree
 
 # read each line of csv
-def readCsv():
-  root = ()
-  with open('/app/data.csv') as csv_file:
-    csv_reader = csv.reader(csv_file, delimiter=',')
-    line_count = 0
-    col_count = 0
-    for row in csv_reader:
+def read_csv(filepath):
+    try:
+        open(filepath)
+    except FileNotFoundError:
+        print("file not found")
+        pass
+    with open(filepath) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        # col_count = 0
+        for row in csv_reader:
 
-      col_count = row.__len__()
+            col_count = len(row)
+            # skip header
+            if line_count == 0:
+                line_count += 1
+                continue
 
-      # skip header
-      if line_count == 0:
-        line_count += 1
-        continue
+            if line_count == 1:  # create root node in the tree
+                root = Level(row[1], row[2], row[3])
+                # print(row[1],row[2],row[3])
+            else:
+                process_row(col_count, root, row)  # for rest of the nodes, keep building the tree
+            line_count += 1
 
-      if (line_count == 1):  # create root node in the tree
-        root = Level(row[1], row[2], row[3])
-      else:
-        processRow(col_count, root, row) # for rest of the nodes, keep building the tree
-
-      line_count += 1
-
-    result = json.dumps(root.__dict__,indent=4)
-    print(result)
+        result = json.dumps(dict(root), indent=4)
+        print(result)
 
 
-readCsv()
+# read_csv()
+
+
+def main():
+    print(" the process is going to start")
+    filepath = input("Please type the entire filepath with the filename : ")
+    if ".csv" in filepath and not None:
+        read_csv(filepath)
+    print("Either the there was no input given or file format is not correct")
+
+
+if __name__ == "__main__":
+    main()
